@@ -1,0 +1,101 @@
+---
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+# load libraries
+source(paste0(here::here(), "/scripts/packages.R"))
+
+# Exercise title, Description, duration
+tibble(
+  Nome = "Calderon",
+  Obiettivo = "Gioco libero - Mini torneo",
+  Durata = "10 minuti"
+) |> 
+  gt() |> 
+  tab_style(
+    style = list(
+      cell_borders(
+        sides = "all",  # Add left border
+        color = "grey",
+        weight = px(1)   # Adjust line thickness
+      )
+    ),
+    locations = cells_body(columns = everything())  # Specify columns
+  ) |> 
+  tab_style(
+    style = list(
+      cell_borders(
+        sides = "all",  # Add left border
+        color = "grey",
+        weight = px(1)   # Adjust line thickness
+      )
+    ),
+    locations = cells_column_labels(columns = everything())  # Specify columns
+  ) |> 
+  tab_style(
+    style = list(
+      cell_fill(color = "lightblue"),
+      cell_text(weight = "bold", size = px(20))
+    ),
+    locations = cells_column_labels(columns = everything())  # Target specific columns
+  ) 
+```
+
+#### Generale
+
+Mini torneo su campo 4.5x4.5 con mini set 2vs2 a tempo. I giocatori della squadra che vince conquistano 1 punto.
+
+```{r}
+tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(2.50, 2.75, 2.50, 2.75,
+             4.50, 4.00, 4.50, 4.00,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 2, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 5, ymax = 6.5, fill = "grey", alpha = .8) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  geom_segment(x = 0.5, xend = 3.5, y = 2, yend = 2, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 5, yend = 5, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+```
+
+#### Dettaglio
+- Campo da gioco diviso in 4 spazi: A-B-C-D di 4.5m x 4.5m
+- Sono permessi solo 2 tocchi per squadra
+- La squadra è composta da 3 giocatori (2 in campo, 1 in attesa)
+- Giocatori sul campo A (Ga-Gb) vs giocatori sul campo B (Ge-Gf)
+- Palla messa in campo da lancio a 2 mani di Ga (successivamente da un giocatore della squadra che conquisterà il punto)
+- Il primo tocco solo in bagher (pena la perdita del punto)
+- Il secondo tocco è libero
+- Il giocatore che effettua il secondo tocco esce dal campo e entra il giocatore in attesa (inizialmente Gi-Gj-Gk-Gl)
+- Esempio:
+    - se Gf manda la palla nell'altro campo, esce dal campo di gioco e viene sostituito da Gk, che attendeva fuori dal campo (area grigia)
+    - se Gf sbaglia il secondo tocco, esce dal campo di gioco e viene sostituito da Gk
+    - se Ge sbaglia il primo tocco e Gf non può provare a mandare la palla nel campo avversario non ci sono rotazioni
+
+#### Rotazione
+- Alla fine del tempo i giocatori ruotano in senso orario
+- Ogni giocatore prende il posto di quello con la lettera che segue:
+    - Ga > Gb > Gc > ...

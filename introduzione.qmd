@@ -1,0 +1,29 @@
+---
+number-depth: 2
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Introduzione
+
+Ogni esercizio deve avere 4 elementi che rispondono a 4 domande:
+
+1.  **Obiettivo** =\> Perchè?
+2.  **Tipo di esercizio** =\> Cosa?
+3.  **Varianti** =\> Dove e Quanti?
+4.  **Gestione** =\> Tempistiche e Punteggio?
+
+## Obiettivi
+
+1.  Stimolanti
+2.  Raggiungibili
+3.  Realistici
+4.  Specifici
+
+## Tipo di esercizio
+
+## Varianti
+
+## Gestione

@@ -1,0 +1,924 @@
+---
+toc-depth: 4
+number-depth: 4
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Riscaldamento
+
+## Giochi liberi
+
+### Calderon {#sec-re1a}
+
+```{r}
+# load libraries
+source(paste0(here::here(), "/scripts/packages.R"))
+
+# Exercise title, Description, duration
+tibble(
+  Nome = "Calderon",
+  Obiettivo = "Gioco libero - Mini torneo",
+  Durata = "10 minuti"
+) |> 
+  gt() |> 
+  tab_style(
+    style = list(
+      cell_borders(
+        sides = "all",  # Add left border
+        color = "grey",
+        weight = px(1)   # Adjust line thickness
+      )
+    ),
+    locations = cells_body(columns = everything())  # Specify columns
+  ) |> 
+  tab_style(
+    style = list(
+      cell_borders(
+        sides = "all",  # Add left border
+        color = "grey",
+        weight = px(1)   # Adjust line thickness
+      )
+    ),
+    locations = cells_column_labels(columns = everything())  # Specify columns
+  ) |> 
+  tab_style(
+    style = list(
+      cell_fill(color = "lightblue"),
+      cell_text(weight = "bold", size = px(20))
+    ),
+    locations = cells_column_labels(columns = everything())  # Target specific columns
+  ) 
+```
+
+[**Generale**]{style="font-size: 20px"}
+
+Mini torneo su campo 4.5x4.5 con mini set 2vs2 a tempo. I giocatori della squadra che vince conquistano 1 punto.
+
+```{r}
+tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(2.50, 2.75, 2.50, 2.75,
+             4.50, 4.00, 4.50, 4.00,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 2, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 5, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 2, ymax = 5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 2, ymax = 5, fill = "#F0D3A4", alpha = .8) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  geom_segment(x = 0.5, xend = 3.5, y = 2, yend = 2, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 5, yend = 5, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+```
+
+[**Dettaglio**]{style="font-size: 20px"}
+
+-   Campo da gioco diviso in 4 spazi: A-B-C-D di 4.5m x 4.5m\
+-   Sono permessi solo 2 tocchi per squadra\
+-   La squadra è composta da 3 giocatori (2 in campo, 1 in attesa)\
+-   Giocatori sul campo A (Ga-Gb) vs giocatori sul campo B (Ge-Gf)\
+-   Palla messa in campo da lancio a 2 mani di Ga (successivamente da un giocatore della squadra che conquisterà il punto)\ 
+-   Il primo tocco solo in bagher (pena la perdita del punto)\
+-   Il secondo tocco è libero\
+-   Il giocatore che effettua il secondo tocco esce dal campo e entra il giocatore in attesa (inizialmente Gi-Gj-Gk-Gl)\
+-   Esempio:
+    -   se Gf manda la palla nell'altro campo, esce dal campo di gioco e viene sostituito da Gk, che attendeva fuori dal campo (area grigia)\
+    -   se Gf sbaglia il secondo tocco, esce dal campo di gioco e viene sostituito da Gk 
+    - se Ge sbaglia il primo tocco e Gf non può provare a mandare la palla nel campo avversario non ci sono rotazioni
+
+[**Rotazione**]{style="font-size: 20px"}
+
+-   Alla fine del tempo i giocatori ruotano in senso orario
+-   Ogni giocatore prende il posto di quello con la lettera che segue:
+    -   Ga {{< fa arrow-right >}} Gb {{< fa arrow-right >}} Gi {{< fa arrow-right >}} 
+    Ge {{< fa arrow-right >}} Gf {{< fa arrow-right >}} Gk {{< fa arrow-right >}}
+    Gg {{< fa arrow-right >}} Gh {{< fa arrow-right >}} Gl {{< fa arrow-right >}}
+    Gd {{< fa arrow-right >}} Gc {{< fa arrow-right >}} Gj {{< fa arrow-right >}}
+    Ga
+
+
+#### Variante 1 {#sec-re1.1a}
+
+[**Variante dell' [Esercizio @sec-re1a]**]{style="font-size: 20px"}
+
+Si gioca a campi incrociati.
+
+```{r}
+tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(2.50, 2.75, 2.50, 2.75,
+             4.50, 4.00, 4.50, 4.00,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 2, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 5, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 2, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 2, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 5, fill = "#F0D3A4", alpha = .8) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  geom_segment(x = 0.5, xend = 3.5, y = 2, yend = 2, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 5, yend = 5, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+```
+
+[**Dettaglio**]{style="font-size: 20px"}
+
+-   Campo da gioco diviso in 4 spazi: A-B-C-D di 4.5m x 4.5m\
+-   Sono permessi solo 2 tocchi per squadra\
+-   La squadra è composta da 3 giocatori (2 in campo, 1 in attesa)\
+-   Giocatori sul campo A (Ga-Gb) vs giocatori sul campo D (Gg-Gh)\
+-   Palla messa in campo da lancio a 2 mani di Ga (successivamente da un giocatore della squadra che conquisterà il punto)\
+- Il primo tocco solo in bagher (pena la perdita del punto)\
+-   Il secondo tocco è libero\
+-   Il giocatore che effettua il secondo tocco esce dal campo e entra il giocatore in attesa (inizialmente Gi-Gj-Gk-Gl)\
+-   Esempio:
+    -   Dopo il lancio di Gc
+    -   se Gf manda la palla nell'altro campo, esce dal campo di gioco e viene sostituito da Gk, che attendeva fuori dal campo (area grigia)\
+    -   se Gf sbaglia il secondo tocco, esce dal campo di gioco e viene sostituito da Gk - se Ge sbaglia il primo tocco e Gf non può provare a mandare la palla nel campo avversario non ci sono rotazioni
+
+[**Rotazione**]{style="font-size: 20px"}
+
+-   Alla fine del tempo i giocatori ruotano in senso orario
+-   Ogni giocatore prende il posto di quello con la lettera che segue:
+    -   Ga {{< fa arrow-right >}} Gb {{< fa arrow-right >}} Gi {{< fa arrow-right >}} 
+    Ge {{< fa arrow-right >}} Gf {{< fa arrow-right >}} Gk {{< fa arrow-right >}}
+    Gg {{< fa arrow-right >}} Gh {{< fa arrow-right >}} Gl {{< fa arrow-right >}}
+    Gd {{< fa arrow-right >}} Gc {{< fa arrow-right >}} Gj {{< fa arrow-right >}}
+    Ga
+    
+#### Variante 2 {#sec-re1.1b}
+
+[**Variante dell' [Esercizio @sec-re1a]**]{style="font-size: 20px"}
+
+Si gioca su campi più piccoli.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+p1 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(2.80, 3.10, 2.80, 3.10,
+             4.25, 4.00, 4.25, 4.00,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 2.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 4.5, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 2.5, ymax = 4.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 2.5, ymax = 4.5, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 2.5, yend = 2.5, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 4.5, yend = 4.5, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+p2 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(3.10, 3.10, 3.10, 3.10,
+             4.00, 4.00, 4.00, 4.00,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 2.83, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 4.17, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 2.83, ymax = 4.17, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 2.83, ymax = 4.17, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 2.83, yend = 2.83, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 4.17, yend = 4.17, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+p3 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(3.30, 3.30, 3.30, 3.30,
+             3.90, 3.90, 3.90, 3.90,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.16, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.84, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.16, ymax = 3.84, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.16, ymax = 3.84, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.16, yend = 3.16, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.84, yend = 3.84, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+p1 + p2 + p3
+```
+
+[**Dettaglio**]{style="font-size: 20px"}
+
+-   Campo da gioco diviso in 4 spazi: A-B-C-D di 4.5m x 3m oppure 4.5m x 2m oppure 4.5m x 1m\
+-   Sono permessi solo 2 tocchi per squadra\
+-   La squadra è composta da 3 giocatori (2 in campo, 1 in attesa)\
+-   Giocatori sul campo A (Ga-Gb) vs giocatori sul campo B (Ge-Gf)\
+-   Palla messa in campo da lancio a 2 mani di Ga (successivamente da un giocatore della squadra che conquisterà il punto)\ 
+-   Il primo tocco solo in bagher (pena la perdita del punto)\
+-   Il secondo tocco è libero\
+-   Il giocatore che effettua il secondo tocco esce dal campo e entra il giocatore in attesa (inizialmente Gi-Gj-Gk-Gl)\
+-   Esempio:
+    -   se Gf manda la palla nell'altro campo, esce dal campo di gioco e viene sostituito da Gk, che attendeva fuori dal campo (area grigia)\
+    -   se Gf sbaglia il secondo tocco, esce dal campo di gioco e viene sostituito da Gk 
+    - se Ge sbaglia il primo tocco e Gf non può provare a mandare la palla nel campo avversario non ci sono rotazioni
+
+[**Rotazione**]{style="font-size: 20px"}
+
+-   Alla fine del tempo i giocatori ruotano in senso orario
+-   Ogni giocatore ruota in questo modo:
+    -   Ga {{< fa arrow-right >}} Gb {{< fa arrow-right >}} Gi {{< fa arrow-right >}} 
+    Ge {{< fa arrow-right >}} Gf {{< fa arrow-right >}} Gk {{< fa arrow-right >}}
+    Gg {{< fa arrow-right >}} Gh {{< fa arrow-right >}} Gl {{< fa arrow-right >}}
+    Gd {{< fa arrow-right >}} Gc {{< fa arrow-right >}} Gj {{< fa arrow-right >}}
+    Ga
+    
+#### Variante 3 {#sec-re1.1c}
+
+[**Variante dell' [Esercizio @sec-re1.1b]**]{style="font-size: 20px"}
+
+Si gioca su campi più piccoli e incrociati.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+
+dr = 3 
+drm <- dr / 3
+
+p1 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(2.80, 3.10, 2.80, 3.10,
+             4.25, 4.00, 4.25, 4.00,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+dr = 2 
+drm <- dr / 3
+p2 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(3.10, 3.10, 3.10, 3.10,
+             4.00, 4.00, 4.00, 4.00,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03)  +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+dr = 1 
+drm <- dr / 3
+p3 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             1.25, 2.75, 1.25, 2.75),
+       y = c(3.30, 3.30, 3.30, 3.30,
+             3.90, 3.90, 3.90, 3.90,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03)  +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+p1 + p2 + p3
+```
+
+[**Dettaglio**]{style="font-size: 20px"}
+
+-   Campo da gioco diviso in 4 spazi: A-B-C-D di 4.5m x 3m oppure 4.5m x 2m oppure 4.5m x 1m\
+-   Sono permessi solo 2 tocchi per squadra\
+-   La squadra è composta da 3 giocatori (2 in campo, 1 in attesa)\
+-   Giocatori sul campo A (Ga-Gb) vs giocatori sul campo B (Ge-Gf)\
+-   Palla messa in campo da lancio a 2 mani di Ga (successivamente da un giocatore della squadra che conquisterà il punto)\ 
+-   Il primo tocco solo in bagher (pena la perdita del punto)\
+-   Il secondo tocco è libero\
+-   Il giocatore che effettua il secondo tocco esce dal campo e entra il giocatore in attesa (inizialmente Gi-Gj-Gk-Gl)\
+-   Esempio:
+    -   se Gf manda la palla nell'altro campo, esce dal campo di gioco e viene sostituito da Gk, che attendeva fuori dal campo (area grigia)\
+    -   se Gf sbaglia il secondo tocco, esce dal campo di gioco e viene sostituito da Gk 
+    - se Ge sbaglia il primo tocco e Gf non può provare a mandare la palla nel campo avversario non ci sono rotazioni
+
+[**Rotazione**]{style="font-size: 20px"}
+
+-   Alla fine del tempo i giocatori ruotano in senso orario
+-   Ogni giocatore prende il posto di quello con la lettera che segue:
+    -   Ga {{< fa arrow-right >}} Gb {{< fa arrow-right >}} Gi {{< fa arrow-right >}} 
+    Ge {{< fa arrow-right >}} Gf {{< fa arrow-right >}} Gk {{< fa arrow-right >}}
+    Gg {{< fa arrow-right >}} Gh {{< fa arrow-right >}} Gl {{< fa arrow-right >}}
+    Gd {{< fa arrow-right >}} Gc {{< fa arrow-right >}} Gj {{< fa arrow-right >}}
+    Ga
+
+#### Variante 4 {#sec-re1.1d}
+
+[**Variante dell' [Esercizio @sec-re1a]**]{style="font-size: 20px"}
+
+Si gioca su campi più grandi 
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+
+dr = 6 
+drm <- dr / 3
+
+p1 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+dr = 7.5 
+drm <- dr / 3
+
+p2 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+dr = 9 
+drm <- dr / 3
+p3 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+p1 + p2 + p3
+```
+
+[**Dettaglio**]{style="font-size: 20px"}
+
+-   Campo da gioco diviso in 4 spazi: A-B-C-D di 4.5m x 6m oppure 4.5m x 7.5m oppure 4.5m x 9m\
+-   Sono permessi solo 2 tocchi per squadra\
+-   La squadra è composta da 3 giocatori (2 in campo, 1 in attesa)\
+-   Giocatori sul campo A (Ga-Gb) vs giocatori sul campo D (Gg-Gh)\
+-   Palla messa in campo da lancio a 2 mani di Ga (successivamente da un giocatore della squadra che conquisterà il punto)\ 
+-   Il primo tocco solo in bagher (pena la perdita del punto)\
+-   Il secondo tocco è libero\
+-   Il giocatore che effettua il secondo tocco esce dal campo e entra il giocatore in attesa (inizialmente Gi-Gj-Gk-Gl)\
+-   Esempio:
+    -   se Gf manda la palla nell'altro campo, esce dal campo di gioco e viene sostituito da Gk, che attendeva fuori dal campo (area grigia)\
+    -   se Gf sbaglia il secondo tocco, esce dal campo di gioco e viene sostituito da Gk 
+    - se Ge sbaglia il primo tocco e Gf non può provare a mandare la palla nel campo avversario non ci sono rotazioni
+
+[**Rotazione**]{style="font-size: 20px"}
+
+-   Alla fine del tempo i giocatori ruotano in senso orario
+-   Ogni giocatore prende il posto di quello con la lettera che segue:
+    -   Ga {{< fa arrow-right >}} Gb {{< fa arrow-right >}} Gi {{< fa arrow-right >}} 
+    Ge {{< fa arrow-right >}} Gf {{< fa arrow-right >}} Gk {{< fa arrow-right >}}
+    Gg {{< fa arrow-right >}} Gh {{< fa arrow-right >}} Gl {{< fa arrow-right >}}
+    Gd {{< fa arrow-right >}} Gc {{< fa arrow-right >}} Gj {{< fa arrow-right >}}
+    Ga
+    
+#### Variante 5 {#sec-re1.1e}
+
+[**Variante dell' [Esercizio @sec-re1a]**]{style="font-size: 20px"}
+
+Si gioca su campi più grandi e incrociati
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+
+dr = 6 
+drm <- dr / 3
+
+p1 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+dr = 7.5 
+drm <- dr / 3
+
+p2 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+dr = 9 
+drm <- dr / 3
+p3 <- tibble(x = c(0.75, 1.50, 2.50, 3.25,
+             0.75, 1.50, 2.50, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 2, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = 2, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = 2, xend = 2, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+p1 + p2 + p3
+```
+
+[**Dettaglio**]{style="font-size: 20px"}
+
+-   Campo da gioco diviso in 4 spazi: A-B-C-D di 4.5m x 6m oppure 4.5m x 7.5m oppure 4.5m x 9m\
+-   Sono permessi solo 2 tocchi per squadra\
+-   La squadra è composta da 3 giocatori (2 in campo, 1 in attesa)\
+-   Giocatori sul campo A (Ga-Gb) vs giocatori sul campo D (Gg-Gh)\
+-   Palla messa in campo da lancio a 2 mani di Ga (successivamente da un giocatore della squadra che conquisterà il punto)\ 
+-   Il primo tocco solo in bagher (pena la perdita del punto)\
+-   Il secondo tocco è libero\
+-   Il giocatore che effettua il secondo tocco esce dal campo e entra il giocatore in attesa (inizialmente Gi-Gj-Gk-Gl)\
+-   Esempio:
+    -   se Gf manda la palla nell'altro campo, esce dal campo di gioco e viene sostituito da Gk, che attendeva fuori dal campo (area grigia)\
+    -   se Gf sbaglia il secondo tocco, esce dal campo di gioco e viene sostituito da Gk 
+    - se Ge sbaglia il primo tocco e Gf non può provare a mandare la palla nel campo avversario non ci sono rotazioni
+
+[**Rotazione**]{style="font-size: 20px"}
+
+-   Alla fine del tempo i giocatori ruotano in senso orario
+-   Ogni giocatore prende il posto di quello con la lettera che segue:
+    -   Ga {{< fa arrow-right >}} Gb {{< fa arrow-right >}} Gi {{< fa arrow-right >}} 
+    Ge {{< fa arrow-right >}} Gf {{< fa arrow-right >}} Gk {{< fa arrow-right >}}
+    Gg {{< fa arrow-right >}} Gh {{< fa arrow-right >}} Gl {{< fa arrow-right >}}
+    Gd {{< fa arrow-right >}} Gc {{< fa arrow-right >}} Gj {{< fa arrow-right >}}
+    Ga
+    
+#### Variante 6 {#sec-re1.1f}
+
+[**Variante dell' [Esercizio @sec-re1.1e]**]{style="font-size: 20px"}
+
+Si gioca su campi più stretti
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+
+dr = 6 
+drm <- dr / 3
+dl = 3
+dlm <- dl / 3
+
+p1 <- tibble(x = c(0.75, 1.00, 3.00, 3.25,
+             0.75, 1.00, 3.00, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 6.5, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = .5 + dlm, xend = .5 + dlm, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_segment(x = 3.5 - dlm, xend = 3.5 - dlm, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+dr = 6 
+drm <- dr / 3
+dl = 2
+dlm <- dl / 3
+
+p2 <- tibble(x = c(0.75, 1.00, 3.00, 3.25,
+             0.75, 1.00, 3.00, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 6.5, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = .5 + dlm, xend = .5 + dlm, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_segment(x = 3.5 - dlm, xend = 3.5 - dlm, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+
+dr = 7.5 
+drm <- dr / 3
+dl = 2
+dlm <- dl / 3
+
+p3 <- tibble(x = c(0.75, 1.00, 3.00, 3.25,
+             0.75, 1.00, 3.00, 3.25,
+             .25, 3.75, .25, 3.75),
+       y = c(2.00, 2.50, 2.00, 2.50,
+             5.00, 4.50, 5.00, 4.50,
+             1.25, 1.25, 5.75, 5.75),
+       img = c(rep(paste0(here(), "/images/RiceDx.png"), 8),
+               rep(paste0(here(), "/images/attesa.png"), 4)),
+       tx = paste0("G", letters[1:12]),
+       R = 1) |> 
+  ggplot(aes(x,y)) + 
+  annotate("rect", xmin = .5, xmax = 3.5, ymin = .5, ymax = 6.5, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = .5, ymax = 3.5 - drm, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  # annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5 + drm, ymax = 6.5, fill = "grey", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5 - drm, ymax = 3.5, fill = "#B4F0BD", alpha = .8) +
+  annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5 - drm, ymax = 3.5, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = 3.5 - dlm, xmax = 3.5, ymin = 3.5, ymax = 3.5 + drm, fill = "#F0D3A4", alpha = .8) +
+  annotate("rect", xmin = .5, xmax = .5 + dlm, ymin = 3.5, ymax = 3.5 + drm, fill = "#B4F0BD", alpha = .8) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 - drm, yend = 3.5 - drm, colour = "red", size = 1) +
+  geom_segment(x = 0.5, xend = 3.5, y = 3.5 + drm, yend = 3.5 + drm, colour = "red", size = 1) +
+  geom_segment(x = .5 + dlm, xend = .5 + dlm, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_segment(x = 3.5 - dlm, xend = 3.5 - dlm, y = .5, yend = 6.5, colour = "red", size = 1) +
+  geom_image(aes(image = img), size=.03) +
+  geom_text_repel(aes(label = tx),
+                  nudge_x = .1, nudge_y = -.2,
+                  min.segment.length = 1) +
+  ggcourt(labels = NULL, show_zones = F, show_zone_lines = F) +
+  annotate("text", x = .25, y = 2.75, label = "A", size = 10) +
+  annotate("text", x = .25, y = 4.25, label = "B", size = 10) +
+  annotate("text", x = 3.75, y = 2.75, label = "C", size = 10) +
+  annotate("text", x = 3.75, y = 4.25, label = "D", size = 10) +
+  # theme_bw() +
+  # scale_x_continuous(n.breaks = 10) +
+  # scale_y_continuous(n.breaks = 20) +
+  NULL
+p1 + p2 + p3
+```
+
+[**Dettaglio**]{style="font-size: 20px"}
+
+-   Campo da gioco diviso in 4 spazi: A-B-C-D di 3m x 6m oppure 2m x 6m oppure 2m x 7.5m\
+-   Sono permessi solo 2 tocchi per squadra\
+-   La squadra è composta da 3 giocatori (2 in campo, 1 in attesa)\
+-   Giocatori sul campo A (Ga-Gb) vs giocatori sul campo B (Ge-Gf)\
+-   Palla messa in campo da lancio a 2 mani di Ga (successivamente da un giocatore della squadra che conquisterà il punto)\ 
+-   Il primo tocco solo in bagher (pena la perdita del punto)\
+-   Il secondo tocco è libero\
+-   Il giocatore che effettua il secondo tocco esce dal campo e entra il giocatore in attesa (inizialmente Gi-Gj-Gk-Gl)\
+-   Esempio:
+    -   se Gf manda la palla nell'altro campo, esce dal campo di gioco e viene sostituito da Gk, che attendeva fuori dal campo (area grigia)\
+    -   se Gf sbaglia il secondo tocco, esce dal campo di gioco e viene sostituito da Gk 
+    - se Ge sbaglia il primo tocco e Gf non può provare a mandare la palla nel campo avversario non ci sono rotazioni
+
+[**Rotazione**]{style="font-size: 20px"}
+
+-   Alla fine del tempo i giocatori ruotano in senso orario
+-   Ogni giocatore prende il posto di quello con la lettera che segue:
+    -   Ga {{< fa arrow-right >}} Gb {{< fa arrow-right >}} Gi {{< fa arrow-right >}} 
+    Ge {{< fa arrow-right >}} Gf {{< fa arrow-right >}} Gk {{< fa arrow-right >}}
+    Gg {{< fa arrow-right >}} Gh {{< fa arrow-right >}} Gl {{< fa arrow-right >}}
+    Gd {{< fa arrow-right >}} Gc {{< fa arrow-right >}} Gj {{< fa arrow-right >}}
+    Ga
